@@ -512,6 +512,22 @@ public class Main {
         if (isLegal("B3", "W", "B")) passed++; else fail("called color");
         if (!isLegal("B3", "R9", "")) passed++; else fail("illegal mismatch");
 
+        if (isLegal("GS", "RS", "")) passed++; else fail("same action skip");
+
+        if (isLegal("Y+2", "R+2", "")) passed++; else fail("same action draw two");
+
+        if (isLegal("W", "R5", "")) passed++; else fail("wild legal");
+
+        if (isLegal("W4", "B2", "")) passed++; else fail("wild draw four legal");
+
+        if (points("RS") == 20) passed++; else fail("skip points");
+
+        if (points("R5") == 5) passed++; else fail("number points");
+
+        if (rank("RR").equals("REVERSE")) passed++; else fail("reverse rank");
+
+        if (rank("YS").equals("SKIP")) passed++; else fail("skip rank");
+
         ArrayList<String> h = new ArrayList<String>();
         h.add("B3");
         h.add("R4");
