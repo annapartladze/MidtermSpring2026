@@ -137,7 +137,11 @@ public class Main {
             int chosen = -1;
 
             if (humanPlayers.get(currentPlayer).booleanValue()) {
-                chosen = askHuman(hand);
+                chosen = ConsoleUI.askHuman(
+                        hand,
+                        scanner,
+                        upCard,
+                        calledColor);
             } else {
                 chosen = BotPlayer.chooseCard(hand, upCard, calledColor);
             }
@@ -210,7 +214,7 @@ public class Main {
 
                 if (card.equals("W") || card.equals("W4")) {
                     if (humanPlayers.get(currentPlayer).booleanValue()) {
-                        calledColor = askColor();
+                        calledColor = ConsoleUI.askColor(scanner);
                     } else {
                         calledColor = BotPlayer.chooseColor(hand);
                     }
@@ -289,35 +293,6 @@ public class Main {
             return "W";
         }
         return deck.remove(0);
-    }
-
-
-
-
-    static int askHuman(ArrayList<String> hand) {
-        while (true) {
-            System.out.print("Choose card index/code or draw: ");
-            String input = scanner.nextLine().trim().toUpperCase();
-            if (input.equals("DRAW")) {
-                return -1;
-            }
-            try {
-                int index = Integer.parseInt(input);
-                if (index >= 0 && index < hand.size()) {
-                    return index;
-                }
-            } catch (Exception ignored) {
-            }
-            for (int i = 0; i < hand.size(); i++) {
-                if (hand.get(i).equals(input)) {
-                    if (RuleEngine.isLegal(hand.get(i), upCard, calledColor)) {
-                        return i;
-                    }
-                    System.out.println("That card is not legal.");
-                }
-            }
-            System.out.println("Card not found.");
-        }
     }
 
     static String askColor() {
