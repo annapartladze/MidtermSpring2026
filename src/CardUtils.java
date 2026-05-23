@@ -1,52 +1,64 @@
 public class CardUtils {
 
-    static String color(String card) {
-        if (card.startsWith("R")) {
-            return "R";
+    public static String color(String card) {
+
+        if (card == null || card.length() == 0 || card.startsWith("W")) {
+            return "";
         }
-        if (card.startsWith("Y")) {
-            return "Y";
-        }
-        if (card.startsWith("G")) {
-            return "G";
-        }
-        if (card.startsWith("B")) {
-            return "B";
-        }
-        return "";
+
+        return card.substring(0, 1);
     }
 
-    static String rank(String card) {
+    public static String rank(String card) {
+
+        if (card == null || card.length() == 0) {
+            return "";
+        }
+
         if (card.equals("W")) {
             return "WILD";
         }
+
         if (card.equals("W4")) {
             return "WILD_DRAW_FOUR";
         }
-        if (card.endsWith("S")) {
+
+        String suffix = card.substring(1);
+
+        if (suffix.equals("S")) {
             return "SKIP";
         }
-        if (card.endsWith("R")) {
+
+        if (suffix.equals("R")) {
             return "REVERSE";
         }
-        if (card.endsWith("+2")) {
+
+        if (suffix.equals("+2")) {
             return "DRAW_TWO";
         }
+
         return "NUMBER";
     }
 
-    static int number(String card) {
-        if (rank(card).equals("NUMBER")) {
-            return Integer.parseInt(card.substring(1));
+    public static int number(String card) {
+
+        if (!rank(card).equals("NUMBER")) {
+            return -1;
         }
-        return -1;
+
+        try {
+            return Integer.parseInt(card.substring(1));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
-    static int points(String card) {
+    public static int points(String card) {
+
         String r = rank(card);
 
-        if (r.equals("NUMBER")) {
-            return number(card);
+        if (r.equals("WILD") || r.equals("WILD_DRAW_FOUR")) {
+            return 50;
         }
 
         if (r.equals("SKIP")
@@ -55,11 +67,8 @@ public class CardUtils {
             return 20;
         }
 
-        if (r.equals("WILD")
-                || r.equals("WILD_DRAW_FOUR")) {
-            return 50;
-        }
+        int num = number(card);
 
-        return 0;
+        return num >= 0 ? num : 0;
     }
 }

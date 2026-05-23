@@ -137,11 +137,7 @@ public class Main {
             int chosen = -1;
 
             if (humanPlayers.get(currentPlayer).booleanValue()) {
-                chosen = ConsoleUI.askHuman(
-                        hand,
-                        scanner,
-                        upCard,
-                        calledColor);
+                chosen = ConsoleUI.askHuman(hand, scanner, upCard, calledColor);
             } else {
                 chosen = BotPlayer.chooseCard(hand, upCard, calledColor);
             }
@@ -157,9 +153,11 @@ public class Main {
                         chosen = hand.size() - 1;
                     } else {
                         System.out.print("Play drawn card " + drawn + "? y/n: ");
-                        String answer = scanner.nextLine();
-                        if (answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes")) {
-                            chosen = hand.size() - 1;
+                        if (scanner.hasNextLine()) {
+                            String answer = scanner.nextLine();
+                            if (answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes")) {
+                                chosen = hand.size() - 1;
+                            }
                         }
                     }
                 }
@@ -176,24 +174,7 @@ public class Main {
                 }
 
                 String card = hand.get(chosen);
-                boolean ok = false;
-                String cardColor = CardUtils.color(card);
-                String upColor = CardUtils.color(upCard);
-                String cardRank = CardUtils.rank(card);
-                String upRank = CardUtils.rank(upCard);
-
-                if (card.startsWith("W")) {
-                    ok = true;
-                } else if (cardColor.equals(upColor)) {
-                    ok = true;
-                } else if (!calledColor.equals("") && cardColor.equals(calledColor)) {
-                    ok = true;
-                } else if (cardRank.equals(upRank) && !cardRank.equals("NUMBER")) {
-                    ok = true;
-                } else if (cardRank.equals("NUMBER") && upRank.equals("NUMBER")
-                        && CardUtils.number(card) == CardUtils.number(upCard)) {
-                    ok = true;
-                }
+                boolean ok = RuleEngine.isLegal(card, upCard, calledColor);
 
                 if (!ok) {
                     if (!quiet) {
@@ -228,51 +209,15 @@ public class Main {
                 }
 
                 if (hand.size() == 0) {
-                    int points = 0;
-                    for (int i = 0; i < hands.size(); i++) {
-                        if (i != currentPlayer) {
-                            for (int j = 0; j < hands.get(i).size(); j++) {
-                                points += CardUtils.points(hands.get(i).get(j));
-                            }
-                        }
-                    }
+
+                    int points = calculateWinnerScore();
                     scores[currentPlayer] += points;
                     if (!quiet) {
                         System.out.println(name + " wins and scores " + points);
                     }
                     return;
-                }
-
-                if (CardUtils.rank(card).equals("SKIP")) {
-                    next();
-                    next();
-                } else if (CardUtils.rank(card).equals("REVERSE")) {
-                    direction = direction * -1;
-                    if (playerNames.size() == 2) {
-                        next();
-                        next();
-                    } else {
-                        next();
-                    }
-                } else if (CardUtils.rank(card).equals("DRAW_TWO")) {
-                    next();
-                    hands.get(currentPlayer).add(draw());
-                    hands.get(currentPlayer).add(draw());
-                    if (!quiet) {
-                        System.out.println(playerNames.get(currentPlayer) + " draws two.");
-                    }
-                    next();
-                } else if (CardUtils.rank(card).equals("WILD_DRAW_FOUR")) {
-                    next();
-                    for (int i = 0; i < 4; i++) {
-                        hands.get(currentPlayer).add(draw());
-                    }
-                    if (!quiet) {
-                        System.out.println(playerNames.get(currentPlayer) + " draws four.");
-                    }
-                    next();
                 } else {
-                    next();
+                    applyCardEffect(card);
                 }
             } else {
                 next();
@@ -295,8 +240,6 @@ public class Main {
         return deck.remove(0);
     }
 
-
-
     static void next() {
         currentPlayer += direction;
         if (currentPlayer >= playerNames.size()) {
@@ -317,48 +260,272 @@ public class Main {
         }
         return out;
     }
+    static int calculateWinnerScore() {
+
+        int points = 0;
+
+        for (int i = 0; i < hands.size(); i++) {
+
+            if (i != currentPlayer) {
+
+                for (String c : hands.get(i)) {
+
+                    points += CardUtils.points(c);
+                }
+            }
+        }
+
+        return points;
+    }
+
+
+    static void applyCardEffect(String card) {
+
+        String rank = CardUtils.rank(card);
+
+        if (rank.equals("SKIP")) {
+
+            next();
+            next();
+
+        } else if (rank.equals("REVERSE")) {
+
+            direction = direction * -1;
+
+            if (playerNames.size() == 2) {
+
+                next();
+                next();
+
+            } else {
+
+                next();
+            }
+
+        } else if (rank.equals("DRAW_TWO")) {
+
+            next();
+
+            hands.get(currentPlayer).add(draw());
+            hands.get(currentPlayer).add(draw());
+
+            if (!quiet) {
+                System.out.println(
+                        playerNames.get(currentPlayer)
+                                + " draws two.");
+            }
+
+            next();
+
+        } else if (rank.equals("WILD_DRAW_FOUR")) {
+
+            next();
+
+            for (int i = 0; i < 4; i++) {
+                hands.get(currentPlayer).add(draw());
+            }
+
+            if (!quiet) {
+                System.out.println(
+                        playerNames.get(currentPlayer)
+                                + " draws four.");
+            }
+
+            next();
+
+        } else {
+
+            next();
+        }
+    }
+
 
     static void selfTest() {
+        int passed = 0;
+        passed += testCardParsing();
+        passed += testRuleLegality();
+        passed += testBotBehavior();
+        passed += testScoring();
+        passed += testTurnAdvancement();
+        passed += testCardEffects();
+        System.out.println("Passed " + passed + " characterization checks.");
+    }
+
+    static int testCardParsing() {
         int passed = 0;
         if (CardUtils.color("R5").equals("R")) passed++; else fail("color R5");
         if (CardUtils.rank("G+2").equals("DRAW_TWO")) passed++; else fail("rank +2");
         if (CardUtils.points("W4") == 50) passed++; else fail("wild points");
+        if (CardUtils.points("RS") == 20) passed++; else fail("skip points");
+        if (CardUtils.points("R5") == 5) passed++; else fail("number points");
+        if (CardUtils.rank("RR").equals("REVERSE")) passed++; else fail("reverse rank");
+        if (CardUtils.rank("YS").equals("SKIP")) passed++; else fail("skip rank");
+        return passed;
+    }
+
+    static int testRuleLegality() {
+        int passed = 0;
         if (RuleEngine.isLegal("R2", "R9", "")) passed++; else fail("same color");
         if (RuleEngine.isLegal("G9", "R9", "")) passed++; else fail("same number");
         if (RuleEngine.isLegal("B3", "W", "B")) passed++; else fail("called color");
         if (!RuleEngine.isLegal("B3", "R9", "")) passed++; else fail("illegal mismatch");
-
         if (RuleEngine.isLegal("GS", "RS", "")) passed++; else fail("same action skip");
-
         if (RuleEngine.isLegal("Y+2", "R+2", "")) passed++; else fail("same action draw two");
-
         if (RuleEngine.isLegal("W", "R5", "")) passed++; else fail("wild legal");
-
         if (RuleEngine.isLegal("W4", "B2", "")) passed++; else fail("wild draw four legal");
+        if (RuleEngine.isLegal("BR", "RR", "")) passed++;
+        else fail("reverse on reverse");
+        return passed;
+    }
 
-        if (CardUtils.points("RS") == 20) passed++; else fail("skip points");
-
-        if (CardUtils.points("R5") == 5) passed++; else fail("number points");
-
-        if (CardUtils.rank("RR").equals("REVERSE")) passed++; else fail("reverse rank");
-
-        if (CardUtils.rank("YS").equals("SKIP")) passed++; else fail("skip rank");
-
+    static int testBotBehavior() {
+        int passed = 0;
         ArrayList<String> h = new ArrayList<String>();
-        h.add("B3");
-        h.add("R4");
-        h.add("W");
-        upCard = "R9";
-        calledColor = "";
-        if (BotPlayer.chooseCard(h, upCard, calledColor) == 1) passed++; else fail("bot normal before wild");
+        h.add("B3"); h.add("R4"); h.add("W");
+        if (BotPlayer.chooseCard(h, "R9", "") == 1) passed++; else fail("bot normal before wild");
 
         ArrayList<String> h2 = new ArrayList<String>();
-        h2.add("B1");
-        h2.add("B2");
-        h2.add("R3");
+        h2.add("B1"); h2.add("B2"); h2.add("R3");
         if (BotPlayer.chooseColor(h2).equals("B")) passed++; else fail("bot color");
 
-        System.out.println("Passed " + passed + " characterization checks.");
+        ArrayList<String> autoHand = new ArrayList<String>();
+
+        autoHand.add("G3");
+
+        String autoDrawn = "R5";
+
+        autoHand.add(autoDrawn);
+
+        int autoChosen = -1;
+
+        if (RuleEngine.isLegal(autoDrawn, "R9", "")) {
+
+            autoChosen = autoHand.size() - 1;
+        }
+
+        if (autoChosen == 1) passed++;
+        else fail("bot auto plays drawn card");
+        return passed;
+    }
+
+    static int testScoring() {
+        int passed = 0;
+        playerNames.clear(); humanPlayers.clear(); hands.clear();
+        playerNames.add("Bot1"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("Bot2"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        hands.get(1).add("R5");
+        hands.get(1).add("GS");
+        hands.get(1).add("W");
+        currentPlayer = 0;
+        int actual = 0;
+        for (int i = 0; i < hands.size(); i++) {
+            if (i != currentPlayer) {
+                for (String c : hands.get(i)) actual += CardUtils.points(c);
+            }
+        }
+        if (actual == 75) passed++; else fail("score from other hands");
+
+        ArrayList<String> unoHand = new ArrayList<String>();
+        unoHand.add("R5"); unoHand.add("B3");
+        unoHand.remove(0);
+        if (unoHand.size() == 1) passed++; else fail("uno at one card");
+
+        playerNames.clear();
+        humanPlayers.clear();
+        hands.clear();
+
+        playerNames.add("A");
+        humanPlayers.add(false);
+        hands.add(new ArrayList<String>());
+
+        playerNames.add("B");
+        humanPlayers.add(false);
+        hands.add(new ArrayList<String>());
+
+        hands.get(1).add("R5");
+        hands.get(1).add("W");
+
+        currentPlayer = 0;
+
+        if (calculateWinnerScore() == 55) {
+            passed++;
+        } else {
+            fail("calculateWinnerScore");
+        }
+        return passed;
+    }
+
+    static int testTurnAdvancement() {
+        int passed = 0;
+        playerNames.clear(); hands.clear(); humanPlayers.clear();
+        playerNames.add("A"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("B"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("C"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+
+        currentPlayer = 0; direction = 1;
+        next();
+        if (currentPlayer == 1) passed++; else fail("next forward");
+
+        currentPlayer = 0; direction = 1;
+        next(); next();
+        if (currentPlayer == 2) passed++; else fail("skip behavior");
+
+        direction = 1; direction = direction * -1;
+        if (direction == -1) passed++; else fail("reverse direction");
+
+        currentPlayer = 2; direction = 1;
+        next();
+        if (currentPlayer == 0) passed++; else fail("next wraparound");
+
+        playerNames.clear(); hands.clear(); humanPlayers.clear();
+        playerNames.add("A"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("B"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        currentPlayer = 0; direction = 1;
+        direction = direction * -1;
+        next(); next();
+        if (currentPlayer == 0) passed++; else fail("reverse 2 players skip");
+        return passed;
+    }
+
+    static int testCardEffects() {
+        int passed = 0;
+
+        // draw two via applyCardEffect
+        playerNames.clear(); hands.clear(); humanPlayers.clear();
+        playerNames.add("A"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("B"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        deck.clear(); deck.add("R1"); deck.add("B2");
+        currentPlayer = 0; direction = 1;
+        quiet = true;
+
+        applyCardEffect("R+2");
+
+        quiet = false;
+        if (hands.get(1).size() == 2) passed++; else fail("applyCardEffect draw two");
+
+        // draw two card count
+        playerNames.clear(); hands.clear(); humanPlayers.clear();
+        playerNames.add("A"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("B"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        deck.clear(); deck.add("R1"); deck.add("B2");
+        currentPlayer = 0; direction = 1; next();
+        int before = hands.get(currentPlayer).size();
+        hands.get(currentPlayer).add(draw());
+        hands.get(currentPlayer).add(draw());
+        if (hands.get(currentPlayer).size() - before == 2) passed++; else fail("draw two adds 2 cards");
+
+        // wild draw four card count
+        playerNames.clear(); hands.clear(); humanPlayers.clear();
+        playerNames.add("A"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        playerNames.add("B"); humanPlayers.add(false); hands.add(new ArrayList<String>());
+        deck.clear();
+        deck.add("R1"); deck.add("B2"); deck.add("G3"); deck.add("Y4");
+        currentPlayer = 0; direction = 1; next();
+        int beforeW4 = hands.get(currentPlayer).size();
+        for (int i = 0; i < 4; i++) hands.get(currentPlayer).add(draw());
+        if (hands.get(currentPlayer).size() - beforeW4 == 4) passed++; else fail("wild draw four adds 4 cards");
+
+        return passed;
     }
 
     static void fail(String name) {

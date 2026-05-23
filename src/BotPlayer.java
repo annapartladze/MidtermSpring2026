@@ -2,44 +2,26 @@ import java.util.ArrayList;
 
 public class BotPlayer {
 
-    static int chooseCard(ArrayList<String> hand,
-                          String upCard,
-                          String calledColor) {
+    public static int chooseCard(
+            ArrayList<String> hand,
+            String up,
+            String call) {
 
+        // Prefer non-wild legal cards first
         for (int i = 0; i < hand.size(); i++) {
+
             String card = hand.get(i);
 
-            boolean ok =
-                    RuleEngine.isLegal(card, upCard, calledColor);
+            if (!card.startsWith("W")
+                    && RuleEngine.isLegal(card, up, call)) {
 
-            if (CardUtils.rank(card).equals("DRAW_TWO") && ok) {
                 return i;
             }
         }
 
+        // Use wilds only if needed
         for (int i = 0; i < hand.size(); i++) {
-            String card = hand.get(i);
 
-            boolean ok =
-                    RuleEngine.isLegal(card, upCard, calledColor);
-
-            if (CardUtils.rank(card).equals("SKIP") && ok) {
-                return i;
-            }
-        }
-
-        for (int i = 0; i < hand.size(); i++) {
-            String card = hand.get(i);
-
-            boolean ok =
-                    RuleEngine.isLegal(card, upCard, calledColor);
-
-            if (CardUtils.rank(card).equals("NUMBER") && ok) {
-                return i;
-            }
-        }
-
-        for (int i = 0; i < hand.size(); i++) {
             if (hand.get(i).startsWith("W")) {
                 return i;
             }
@@ -48,16 +30,16 @@ public class BotPlayer {
         return -1;
     }
 
-    static String chooseColor(ArrayList<String> hand) {
+    public static String chooseColor(ArrayList<String> hand) {
 
         int r = 0;
         int y = 0;
         int g = 0;
         int b = 0;
 
-        for (int i = 0; i < hand.size(); i++) {
+        for (String card : hand) {
 
-            String c = CardUtils.color(hand.get(i));
+            String c = CardUtils.color(card);
 
             if (c.equals("R")) {
                 r++;
@@ -70,14 +52,12 @@ public class BotPlayer {
             }
         }
 
-        if (r >= y && r >= g && r >= b) {
-            return "R";
-        } else if (y >= r && y >= g && y >= b) {
-            return "Y";
-        } else if (g >= r && g >= y && g >= b) {
-            return "G";
-        } else {
-            return "B";
-        }
+        int max = Math.max(Math.max(r, y), Math.max(g, b));
+
+        if (max == r) return "R";
+        if (max == y) return "Y";
+        if (max == g) return "G";
+
+        return "B";
     }
 }

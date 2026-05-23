@@ -1,27 +1,37 @@
 public class RuleEngine {
 
-    static boolean isLegal(String card, String up, String call) {
+    public static boolean isLegal(String card, String up, String call) {
 
+        if (card == null || up == null) {
+            return false;
+        }
+
+        // Wilds are always legal
         if (card.startsWith("W")) {
             return true;
         }
 
+        // Active called color after wild
+        if (call != null && !call.equals("")) {
+            return CardUtils.color(card).equals(call);
+        }
+
+        // Match by color
         if (CardUtils.color(card).equals(CardUtils.color(up))) {
             return true;
         }
 
-        if (!call.equals("")
-                && CardUtils.color(card).equals(call)) {
+        // Match by action type
+        String cardRank = CardUtils.rank(card);
+        String upRank = CardUtils.rank(up);
+
+        if (cardRank.equals(upRank) && !cardRank.equals("NUMBER")) {
             return true;
         }
 
-        if (CardUtils.rank(card).equals(CardUtils.rank(up))
-                && !CardUtils.rank(card).equals("NUMBER")) {
-            return true;
-        }
-
-        return CardUtils.rank(card).equals("NUMBER")
-                && CardUtils.rank(up).equals("NUMBER")
+        // Match by number
+        return cardRank.equals("NUMBER")
+                && upRank.equals("NUMBER")
                 && CardUtils.number(card) == CardUtils.number(up);
     }
 }
