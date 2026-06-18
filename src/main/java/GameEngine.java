@@ -1,7 +1,13 @@
 import java.util.ArrayList;
 import java.util.Collections;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class GameEngine {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(GameEngine.class);
 
     GameState state;
 
@@ -10,6 +16,8 @@ public class GameEngine {
     }
 
     void playGame() {
+        logger.info("UNO game started");
+
         state.deck.clear();
         String[] colors = {"R", "Y", "G", "B"};
         for (int c = 0; c < colors.length; c++) {
@@ -53,6 +61,9 @@ public class GameEngine {
         while (guard < 3000) {
             guard++;
             String name = state.playerNames.get(state.currentPlayer);
+
+            logger.info("{}'s turn", name);
+
             ArrayList<String> hand = state.hands.get(state.currentPlayer);
 
             if (!state.quiet) {
@@ -68,6 +79,8 @@ public class GameEngine {
 
             if (chosen >= 0) {
                 if (chosen >= hand.size()) {
+
+                    logger.warn("{} selected an invalid index", name);
                     if (!state.quiet) {
                         System.out.println(name + " selected an invalid index and draws a penalty card.");
                     }
@@ -80,6 +93,7 @@ public class GameEngine {
                 boolean ok = RuleEngine.isLegal(card, state.upCard, state.calledColor);
 
                 if (!ok) {
+                    logger.warn("{} attempted illegal card {}", name, card);
                     if (!state.quiet) {
                         System.out.println(name + " tried illegal card " + card + " and draws a penalty card.");
                     }
@@ -91,6 +105,7 @@ public class GameEngine {
                 hand.remove(chosen);
                 state.discard.add(state.upCard);
                 state.upCard = card;
+                logger.info("{} played {}", name, card);
                 state.calledColor = "";
                 if (!state.quiet) {
                     System.out.println(name + " plays " + card);
@@ -117,6 +132,9 @@ public class GameEngine {
                     if (!state.quiet) {
                         System.out.println(name + " wins and scores " + points);
                     }
+                    logger.info("{} won the game with {} points",
+                            name,
+                            points);
                     return;
                 } else {
                     applyCardEffect(card);
@@ -141,6 +159,8 @@ public class GameEngine {
     int handleDraw(String name, ArrayList<String> hand) {
         String drawn = state.draw();
         hand.add(drawn);
+        logger.info("{} drew {}", name, drawn);
+
         if (!state.quiet) {
             System.out.println(name + " draws " + drawn);
         }
