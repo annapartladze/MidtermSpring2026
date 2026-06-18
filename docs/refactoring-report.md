@@ -162,6 +162,82 @@ Benefits:
 
 ---
 
+### Extracted GameState And GameEngine
+
+In response to the professor's feedback regarding the remaining global state and the large gameplay loop, the project was further refactored by introducing dedicated GameState and GameEngine classes.
+
+#### Introduced GameState
+
+A new GameState class was created to encapsulate all mutable game data, including:
+
+- player names
+- player types (human or bot)
+- player hands
+- deck and discard pile
+- scores
+- current player index
+- play direction
+- current up card
+- called color
+- random number generator
+- scanner instance
+- quiet mode flag
+
+GameState also centralizes several utility operations:
+
+- `setupPlayers()`
+- `draw()`
+- `next()`
+- `join()`
+
+Benefits:
+- removed the remaining global mutable state from Main
+- centralized game data management
+- improved maintainability
+- established a clearer ownership model for game state
+
+#### Introduced GameEngine
+
+A new GameEngine class was introduced to encapsulate game execution and orchestration responsibilities.
+
+Responsibilities extracted:
+
+- deck construction and initialization
+- card dealing
+- game setup
+- turn loop execution
+- draw handling
+- move selection
+- winner detection and scoring
+- card effect application
+
+Supporting helper methods include:
+
+- `chooseMove()`
+- `handleDraw()`
+- `calculateWinnerScore()`
+- `applyCardEffect()`
+
+Benefits:
+- removed the large gameplay loop from Main
+- separated application startup from game execution
+- reduced Main to application bootstrap responsibilities
+- improved readability and maintainability
+- improved direct testability of gameplay behavior
+- created a clearer separation of responsibilities
+
+#### Simplified Main
+
+After extraction, Main now primarily performs:
+
+- command-line argument parsing
+- GameState creation and configuration
+- GameEngine creation
+- starting requested games
+- final score reporting
+
+Main is now significantly smaller and acts primarily as an application entry point rather than a large procedural controller.
+
 ### Simplified Gameplay Validation
 
 Gameplay validation inside playGame was updated to reuse RuleEngine instead of repeating legality logic.
@@ -216,10 +292,9 @@ changing every method signature across all five classes.
 
 Some limitations still remain:
 
-- Main still coordinates significant game state
-- global mutable state still exists
-- playGame still performs orchestration responsibilities
+- GameEngine still performs orchestration responsibilities
 - cards are still represented as primitive strings
+- GameState still exposes mutable collections directly
 
 These limitations were intentionally not fully redesigned in order to preserve behavior and avoid rewriting the entire application.
 
@@ -260,6 +335,14 @@ behavior was preserved before continuing.
 9. Added testCardEffects() calling applyCardEffect() directly
    — 29 checks passing
 10. Split selfTest() into six focused helper methods
+    — reran tests, 29 passing
+11. Extracted remaining mutable state into GameState by introducing centralized storage for players, hands, deck, discard pile, scores, turn state, configuration, and helper operations
+        — reran tests, 29 passing
+
+12. Extracted gameplay orchestration and the main turn loop into GameEngine
+    — reran tests, 29 passing
+
+13. Simplified Main into an application bootstrap class responsible only for configuration, game startup, and final score reporting
     — reran tests, 29 passing
 
 This minimized risk while progressively improving maintainability and structure.
