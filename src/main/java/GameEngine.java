@@ -1,3 +1,4 @@
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -16,6 +17,7 @@ public class GameEngine {
     }
 
     void playGame() {
+        state.startedAt = LocalDateTime.now();
         logger.info("UNO game started");
 
         state.deck.clear();
@@ -60,6 +62,7 @@ public class GameEngine {
         int guard = 0;
         while (guard < 3000) {
             guard++;
+            state.roundsPlayed++;
             String name = state.playerNames.get(state.currentPlayer);
 
             logger.info("{}'s turn", name);
@@ -125,18 +128,24 @@ public class GameEngine {
                 if (hand.size() == 1 && !state.quiet) {
                     System.out.println(name + " says UNO!");
                 }
-
                 if (hand.size() == 0) {
+                    state.winner = name;
+                    state.finishedAt = LocalDateTime.now();
+
                     int points = calculateWinnerScore();
                     state.scores[state.currentPlayer] += points;
+
                     if (!state.quiet) {
                         System.out.println(name + " wins and scores " + points);
                     }
+
                     logger.info("{} won the game with {} points",
                             name,
                             points);
                     return;
-                } else {
+                }
+
+                 else {
                     applyCardEffect(card);
                 }
             } else {

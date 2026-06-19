@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="GameTest" time="0.036" tests="6" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="persistence.StatisticsServiceTest" time="0.468" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="25"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -7,6 +7,7 @@
     <property name="java.vm.vendor" value="Homebrew"/>
     <property name="sun.arch.data.model" value="64"/>
     <property name="java.vendor.url" value="https://github.com/Homebrew/homebrew-core/issues"/>
+    <property name="user.timezone" value="Asia/Tbilisi"/>
     <property name="os.name" value="Mac OS X"/>
     <property name="java.vm.specification.version" value="25"/>
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
@@ -59,10 +60,22 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="69.0"/>
   </properties>
-  <testcase name="testCardEffects" classname="GameTest" time="0.021"/>
-  <testcase name="testRuleLegality" classname="GameTest" time="0.001"/>
-  <testcase name="testTurnAdvancement" classname="GameTest" time="0.0"/>
-  <testcase name="testCardParsing" classname="GameTest" time="0.0"/>
-  <testcase name="testBotBehavior" classname="GameTest" time="0.0"/>
-  <testcase name="testScoring" classname="GameTest" time="0.001"/>
+  <testcase name="statisticsMethodsShouldNotThrow" classname="persistence.StatisticsServiceTest" time="0.467">
+    <system-out><![CDATA[
+Recent Games:
+Game 5 Winner: Bot1 Rounds: 28 Finished: 2026-06-19T17:12:07.192117
+Game 4 Winner: Bot1 Rounds: 52 Finished: 2026-06-19T16:27:06.854927
+Game 3 Winner: Bot3 Rounds: 43 Finished: 2026-06-19T16:26:19.822311
+Game 2 Winner: Bot1 Rounds: 18 Finished: 2026-06-19T15:52:02.376392
+Game 1 Winner: Bot1 Rounds: 27 Finished: 2026-06-19T15:41:25.091303
+Bot1 has 4 wins.
+
+Highest Scores:
+Bot1: 117
+Bot1: 76
+Bot3: 52
+Bot1: 36
+Bot1: 27
+]]></system-out>
+  </testcase>
 </testsuite>

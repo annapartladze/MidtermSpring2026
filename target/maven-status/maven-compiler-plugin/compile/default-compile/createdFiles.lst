@@ -1,7 +1,10 @@
 ConsoleUI.class
 CardUtils.class
 Main.class
+persistence/GamePersistenceService.class
 BotPlayer.class
+persistence/DatabaseManager.class
 GameState.class
 GameEngine.class
 RuleEngine.class
+persistence/StatisticsService.class

@@ -1,8 +1,20 @@
 import java.util.Random;
 
+import persistence.DatabaseManager;
+import persistence.GamePersistenceService;
+import persistence.StatisticsService;
+
 public class Main {
 
     public static void main(String[] args) {
+
+        try {
+            DatabaseManager.initialize();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
         int bots = 3;
         int games = 1;
         boolean human = false;
@@ -21,7 +33,8 @@ public class Main {
             } else if (args[i].equals("--seed") && i + 1 < args.length) {
                 seed = Long.parseLong(args[++i]);
             } else if (args[i].equals("--help")) {
-                System.out.println("Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N]");
+                System.out.println(
+                        "Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N]");
                 return;
             }
         }
@@ -31,7 +44,8 @@ public class Main {
         state.random = new Random(seed);
         state.setupPlayers(bots, human);
 
-        if (state.playerNames.size() < 2 || state.playerNames.size() > 4) {
+        if (state.playerNames.size() < 2 ||
+                state.playerNames.size() > 4) {
             System.out.println("UNO needs 2 to 4 players.");
             return;
         }
@@ -39,15 +53,48 @@ public class Main {
         GameEngine engine = new GameEngine(state);
 
         for (int g = 1; g <= games; g++) {
+
             if (!state.quiet) {
                 System.out.println("\n=== Game " + g + " ===");
             }
+
             engine.playGame();
+
+            try {
+                GamePersistenceService service =
+                        new GamePersistenceService();
+
+                service.saveGame(
+                        state.winner,
+                        state.roundsPlayed,
+                        state.startedAt.toString(),
+                        state.finishedAt.toString(),
+                        state.playerNames.toArray(new String[0]),
+                        state.scores
+                );
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         System.out.println("\nFinal scores:");
         for (int i = 0; i < state.playerNames.size(); i++) {
-            System.out.println(state.playerNames.get(i) + ": " + state.scores[i]);
+            System.out.println(
+                    state.playerNames.get(i)
+                            + ": "
+                            + state.scores[i]);
+        }
+
+        try {
+            StatisticsService stats =
+                    new StatisticsService();
+
+            stats.recentGames();
+            stats.playerWins(state.winner);
+            stats.highestScores();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

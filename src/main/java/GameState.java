@@ -2,8 +2,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
+import java.time.LocalDateTime;
 
 public class GameState {
+
     ArrayList<String> playerNames = new ArrayList<String>();
     ArrayList<Boolean> humanPlayers = new ArrayList<Boolean>();
     ArrayList<ArrayList<String>> hands = new ArrayList<ArrayList<String>>();
@@ -14,6 +16,13 @@ public class GameState {
     int direction = 1;
     String upCard = "";
     String calledColor = "";
+
+    int roundsPlayed = 0;
+    String winner = "";
+
+    LocalDateTime startedAt;
+    LocalDateTime finishedAt;
+
     boolean quiet = false;
     Random random = new Random();
     Scanner scanner = new Scanner(System.in);

@@ -5,3 +5,6 @@
 /Users/annapartladze/MidtermSpring2026/src/main/java/GameState.java
 /Users/annapartladze/MidtermSpring2026/src/main/java/Main.java
 /Users/annapartladze/MidtermSpring2026/src/main/java/RuleEngine.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/DatabaseManager.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/GamePersistenceService.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/StatisticsService.java
