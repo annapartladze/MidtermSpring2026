@@ -1,102 +1,84 @@
 package persistence;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.util.List;
+
+import org.apache.ibatis.session.SqlSession;
+
+import persistence.mapper.GameMapper;
+import persistence.report.HighestScore;
+import persistence.report.RecentGame;
 
 public class StatisticsService {
 
-    public void recentGames() throws Exception {
+    public List<RecentGame> recentGames() throws Exception {
 
-        try (Connection connection =
-                     DatabaseManager.getConnection()) {
+        try (SqlSession session =
+                     MyBatisUtil.getFactory().openSession()) {
 
-            PreparedStatement statement =
-                    connection.prepareStatement(
-                            """
-                            SELECT id,
-                                   winner,
-                                   rounds,
-                                   finished_at
-                            FROM games
-                            ORDER BY id DESC
-                            LIMIT 5
-                            """);
+            GameMapper mapper =
+                    session.getMapper(GameMapper.class);
 
-            ResultSet rs = statement.executeQuery();
-
+            List<RecentGame> games =
+                    mapper.recentGames(5);
             System.out.println("\nRecent Games:");
 
-            while (rs.next()) {
+            for (RecentGame game : games) {
                 System.out.println(
-                        "Game " + rs.getInt("id")
+                        "Game " + game.getId()
                                 + " Winner: "
-                                + rs.getString("winner")
+                                + game.getWinner()
                                 + " Rounds: "
-                                + rs.getInt("rounds")
+                                + game.getRounds()
                                 + " Finished: "
-                                + rs.getString("finished_at"));
+                                + game.getFinishedAt());
             }
+
+            return games;
         }
     }
 
-    public void playerWins(String player)
+    public int playerWins(String player)
             throws Exception {
 
-        try (Connection connection =
-                     DatabaseManager.getConnection()) {
+        try (SqlSession session =
+                     MyBatisUtil.getFactory().openSession()) {
 
-            PreparedStatement statement =
-                    connection.prepareStatement(
-                            """
-                            SELECT COUNT(*)
-                            FROM games
-                            WHERE winner = ?
-                            """);
+            GameMapper mapper =
+                    session.getMapper(GameMapper.class);
 
-            statement.setString(1, player);
+            int wins = mapper.playerWins(player);
 
-            ResultSet rs =
-                    statement.executeQuery();
-
-            if (rs.next()) {
-                System.out.println(
-                        player
-                                + " has "
-                                + rs.getInt(1)
-                                + " wins.");
-            }
+            System.out.println(
+                    player
+                            + " has "
+                            + wins
+                            + " wins.");
+            return wins;
         }
     }
 
-    public void highestScores()
+    public List<HighestScore> highestScores()
             throws Exception {
 
-        try (Connection connection =
-                     DatabaseManager.getConnection()) {
+        try (SqlSession session =
+                     MyBatisUtil.getFactory().openSession()) {
 
-            PreparedStatement statement =
-                    connection.prepareStatement(
-                            """
-                            SELECT player_name,
-                                   score
-                            FROM scores
-                            ORDER BY score DESC
-                            LIMIT 5
-                            """);
+            GameMapper mapper =
+                    session.getMapper(GameMapper.class);
 
-            ResultSet rs =
-                    statement.executeQuery();
-
+            List<HighestScore> scores =
+                    mapper.highestScores(5);
             System.out.println(
                     "\nHighest Scores:");
 
-            while (rs.next()) {
+            for (HighestScore score : scores) {
                 System.out.println(
-                        rs.getString("player_name")
+                        score.getPlayerName()
                                 + ": "
-                                + rs.getInt("score"));
+                                + score.getScore());
             }
+
+            return scores;
         }
     }
 }

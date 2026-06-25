@@ -1,43 +1,66 @@
 package persistence;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.ibatis.session.SqlSession;
+
+import persistence.mapper.GameMapper;
 
 public class DatabaseManager {
 
-    private static final String URL = "jdbc:sqlite:uno.db";
+    public static void initialize() {
 
-    public static Connection getConnection()
-            throws SQLException {
-        return DriverManager.getConnection(URL);
+        try (SqlSession session =
+                     MyBatisUtil.getFactory().openSession()) {
+
+            GameMapper mapper =
+                    session.getMapper(GameMapper.class);
+
+            mapper.createPlayersTable();
+            mapper.createGamesTable();
+            mapper.createRoundsTable();
+            mapper.createScoresTable();
+
+            if (!hasColumn(mapper.gameColumns(), "winner_player_id")) {
+                mapper.addWinnerPlayerIdToGames();
+            }
+            if (!hasColumn(mapper.scoreColumns(), "player_id")) {
+                mapper.addPlayerIdToScores();
+            }
+
+            session.commit();
+        }
     }
 
-    public static void initialize()
-            throws SQLException {
+    public static void clearAllData() {
 
-        try (Connection connection = getConnection();
-             Statement statement = connection.createStatement()) {
+        try (SqlSession session =
+                     MyBatisUtil.getFactory().openSession()) {
 
-            statement.execute("""
-                    CREATE TABLE IF NOT EXISTS games (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        started_at TEXT,
-                        finished_at TEXT,
-                        winner TEXT,
-                        rounds INTEGER
-                    )
-                    """);
+            GameMapper mapper =
+                    session.getMapper(GameMapper.class);
 
-            statement.execute("""
-                    CREATE TABLE IF NOT EXISTS scores (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        game_id INTEGER,
-                        player_name TEXT,
-                        score INTEGER
-                    )
-                    """);
+            mapper.clearScores();
+            mapper.clearRounds();
+            mapper.clearGames();
+            mapper.clearPlayers();
+
+            session.commit();
         }
+    }
+
+    private static boolean hasColumn(
+            List<Map<String, Object>> columns,
+            String expectedName) {
+
+        for (Map<String, Object> column : columns) {
+            Object name = column.get("name");
+            if (name != null &&
+                    expectedName.equalsIgnoreCase(name.toString())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

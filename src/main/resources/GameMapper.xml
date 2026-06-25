@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="persistence.mapper.GameMapper">
+
+    <resultMap id="recentGameResult"
+               type="persistence.report.RecentGame">
+        <id property="id" column="id"/>
+        <result property="winner" column="winner"/>
+        <result property="rounds" column="rounds"/>
+        <result property="finishedAt" column="finished_at"/>
+    </resultMap>
+
+    <resultMap id="highestScoreResult"
+               type="persistence.report.HighestScore">
+        <result property="playerName" column="player_name"/>
+        <result property="score" column="score"/>
+    </resultMap>
+
+    <update id="createPlayersTable">
+        CREATE TABLE IF NOT EXISTS players (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    </update>
+
+    <update id="createGamesTable">
+        CREATE TABLE IF NOT EXISTS games (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            started_at TEXT,
+            finished_at TEXT,
+            winner TEXT,
+            winner_player_id INTEGER,
+            rounds INTEGER,
+            FOREIGN KEY (winner_player_id) REFERENCES players(id)
+        )
+    </update>
+
+    <update id="createRoundsTable">
+        CREATE TABLE IF NOT EXISTS rounds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id INTEGER NOT NULL,
+            round_number INTEGER NOT NULL,
+            FOREIGN KEY (game_id) REFERENCES games(id)
+        )
+    </update>
+
+    <update id="createScoresTable">
+        CREATE TABLE IF NOT EXISTS scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id INTEGER NOT NULL,
+            player_id INTEGER,
+            player_name TEXT,
+            score INTEGER NOT NULL,
+            FOREIGN KEY (game_id) REFERENCES games(id),
+            FOREIGN KEY (player_id) REFERENCES players(id)
+        )
+    </update>
+
+    <select id="gameColumns" resultType="map">
+        PRAGMA table_info(games)
+    </select>
+
+    <select id="scoreColumns" resultType="map">
+        PRAGMA table_info(scores)
+    </select>
+
+    <update id="addWinnerPlayerIdToGames">
+        ALTER TABLE games ADD COLUMN winner_player_id INTEGER
+    </update>
+
+    <update id="addPlayerIdToScores">
+        ALTER TABLE scores ADD COLUMN player_id INTEGER
+    </update>
+
+    <delete id="clearScores">
+        DELETE FROM scores
+    </delete>
+
+    <delete id="clearRounds">
+        DELETE FROM rounds
+    </delete>
+
+    <delete id="clearGames">
+        DELETE FROM games
+    </delete>
+
+    <delete id="clearPlayers">
+        DELETE FROM players
+    </delete>
+
+    <insert id="insertPlayerIfMissing">
+        INSERT OR IGNORE INTO players (name)
+        VALUES (#{name})
+    </insert>
+
+    <select id="findPlayerId" resultType="int">
+        SELECT id
+        FROM players
+        WHERE name = #{name}
+    </select>
+
+    <insert id="insertGame"
+            parameterType="persistence.entity.Game"
+            useGeneratedKeys="true"
+            keyProperty="id">
+
+        INSERT INTO games
+        (started_at,
+        finished_at,
+        winner,
+        winner_player_id,
+        rounds)
+
+        VALUES
+        (#{startedAt},
+        #{finishedAt},
+        #{winner},
+        #{winnerPlayerId},
+        #{rounds})
+
+    </insert>
+
+    <insert id="insertRound">
+        INSERT INTO rounds (game_id, round_number)
+        VALUES (#{gameId}, #{roundNumber})
+    </insert>
+
+    <insert id="insertScore">
+        INSERT INTO scores (game_id, player_id, player_name, score)
+        SELECT #{gameId}, id, name, #{score}
+        FROM players
+        WHERE id = #{playerId}
+    </insert>
+
+    <select id="recentGames" resultMap="recentGameResult">
+        SELECT g.id,
+               p.name AS winner,
+               COUNT(r.id) AS rounds,
+               g.finished_at
+        FROM games g
+        LEFT JOIN players p ON p.id = g.winner_player_id
+        LEFT JOIN rounds r ON r.game_id = g.id
+        GROUP BY g.id, p.name, g.finished_at
+        ORDER BY g.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="playerWins" resultType="int">
+        SELECT COUNT(*)
+        FROM games g
+        JOIN players p ON p.id = g.winner_player_id
+        WHERE p.name = #{player}
+    </select>
+
+    <select id="highestScores" resultMap="highestScoreResult">
+        SELECT p.name AS player_name,
+               s.score
+        FROM scores s
+        JOIN players p ON p.id = s.player_id
+        ORDER BY s.score DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countGames" resultType="int">
+        SELECT COUNT(*) FROM games
+    </select>
+
+    <select id="countPlayers" resultType="int">
+        SELECT COUNT(*) FROM players
+    </select>
+
+    <select id="countRounds" resultType="int">
+        SELECT COUNT(*) FROM rounds
+    </select>
+
+    <select id="countScores" resultType="int">
+        SELECT COUNT(*) FROM scores
+    </select>
+
+</mapper>

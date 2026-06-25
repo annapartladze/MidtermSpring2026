@@ -18,6 +18,9 @@ public class GameEngine {
 
     void playGame() {
         state.startedAt = LocalDateTime.now();
+        state.finishedAt = null;
+        state.roundsPlayed = 0;
+        state.winner = "";
         logger.info("UNO game started");
 
         state.deck.clear();

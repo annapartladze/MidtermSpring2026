@@ -1,8 +1,9 @@
 package persistence;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import org.apache.ibatis.session.SqlSession;
+
+import persistence.entity.Game;
+import persistence.mapper.GameMapper;
 
 public class GamePersistenceService {
 
@@ -15,54 +16,45 @@ public class GamePersistenceService {
             int[] scores)
             throws Exception {
 
-        try (Connection connection =
-                     DatabaseManager.getConnection()) {
+        DatabaseManager.initialize();
 
-            PreparedStatement gameStatement =
-                    connection.prepareStatement(
-                            """
-                            INSERT INTO games
-                            (started_at,
-                             finished_at,
-                             winner,
-                             rounds)
-                            VALUES (?, ?, ?, ?)
-                            """,
-                            PreparedStatement.RETURN_GENERATED_KEYS);
+        SqlSession session =
+                MyBatisUtil.getFactory().openSession();
 
-            gameStatement.setString(1, startedAt);
-            gameStatement.setString(2, finishedAt);
-            gameStatement.setString(3, winner);
-            gameStatement.setInt(4, roundsPlayed);
+        try {
 
-            gameStatement.executeUpdate();
+            GameMapper mapper =
+                    session.getMapper(GameMapper.class);
 
-            ResultSet keys =
-                    gameStatement.getGeneratedKeys();
-
-            keys.next();
-            int gameId = keys.getInt(1);
-
-            for (int i = 0;
-                 i < playerNames.length;
-                 i++) {
-
-                PreparedStatement scoreStatement =
-                        connection.prepareStatement(
-                                """
-                                INSERT INTO scores
-                                (game_id,
-                                 player_name,
-                                 score)
-                                VALUES (?, ?, ?)
-                                """);
-
-                scoreStatement.setInt(1, gameId);
-                scoreStatement.setString(2, playerNames[i]);
-                scoreStatement.setInt(3, scores[i]);
-
-                scoreStatement.executeUpdate();
+            for (String playerName : playerNames) {
+                mapper.insertPlayerIfMissing(playerName);
             }
+            mapper.insertPlayerIfMissing(winner);
+
+            Integer winnerPlayerId = mapper.findPlayerId(winner);
+
+            Game game = new Game();
+            game.setStartedAt(startedAt);
+            game.setFinishedAt(finishedAt);
+            game.setWinner(winner);
+            game.setWinnerPlayerId(winnerPlayerId);
+            game.setRounds(roundsPlayed);
+
+            mapper.insertGame(game);
+
+            for (int round = 1; round <= roundsPlayed; round++) {
+                mapper.insertRound(game.getId(), round);
+            }
+
+            for (int i = 0; i < playerNames.length; i++) {
+                Integer playerId = mapper.findPlayerId(playerNames[i]);
+                mapper.insertScore(game.getId(), playerId, scores[i]);
+            }
+
+            session.commit();
+
+        } finally {
+            session.close();
         }
     }
 }

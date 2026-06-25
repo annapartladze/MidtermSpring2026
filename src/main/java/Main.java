@@ -20,6 +20,8 @@ public class Main {
         boolean human = false;
         boolean quietFlag = false;
         long seed = System.currentTimeMillis();
+        String report = null;
+        String reportPlayer = "Bot1";
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--bots") && i + 1 < args.length) {
@@ -32,11 +34,42 @@ public class Main {
                 quietFlag = true;
             } else if (args[i].equals("--seed") && i + 1 < args.length) {
                 seed = Long.parseLong(args[++i]);
+            } else if (args[i].equals("--report") && i + 1 < args.length) {
+                report = args[++i];
+            } else if (args[i].equals("--player") && i + 1 < args.length) {
+                reportPlayer = args[++i];
             } else if (args[i].equals("--help")) {
                 System.out.println(
-                        "Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N]");
+                        "Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N] [--report recent|wins|scores|all] [--player NAME]");
                 return;
             }
+        }
+
+        if (report != null) {
+            try {
+                StatisticsService stats =
+                        new StatisticsService();
+
+                if (report.equals("recent") || report.equals("all")) {
+                    stats.recentGames();
+                }
+                if (report.equals("wins") || report.equals("all")) {
+                    stats.playerWins(reportPlayer);
+                }
+                if (report.equals("scores") || report.equals("all")) {
+                    stats.highestScores();
+                }
+                if (!report.equals("recent") &&
+                        !report.equals("wins") &&
+                        !report.equals("scores") &&
+                        !report.equals("all")) {
+                    System.out.println(
+                            "Unknown report. Use recent, wins, scores, or all.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return;
         }
 
         GameState state = new GameState();
