@@ -1,28 +1,93 @@
 # Midterm UNO CLI
 
-This is a standalone CLI UNO-like game.
+This project is a standalone command-line implementation of an UNO-like card game written in Java.
 
-The code is written as plausible feature-grown Java: almost everything lives in one procedural `Main` class. It works, but it has mixed responsibilities, duplicated rule logic, primitive-heavy card handling, global state, and condition-heavy gameplay code. The goal is to refactor it safely, not rewrite it.
+The project began as a feature-grown procedural application where most responsibilities lived inside a single `Main` class. Through incremental refactoring, responsibilities were extracted into dedicated classes while preserving existing behavior through characterization tests.
 
-## Compile
+The application supports:
+
+* bot-only games
+* human vs. bot games
+* configurable numbers of bots and games
+* scoring across multiple games
+* automated tests through Maven
+* logging of important game events
+* Docker-based execution
+
+## Project Structure
+
+* `CardUtils` - card parsing and scoring utilities
+* `RuleEngine` - legal move validation
+* `BotPlayer` - bot decision logic
+* `ConsoleUI` - user input and interaction
+* `GameState` - centralized game state
+* `GameEngine` - game orchestration and turn loop
+
+## Requirements
+
+* Java 17
+* Maven 3.9+
+* Docker Desktop (optional)
+
+## Local Build
 
 ```bash
-scripts/compile.sh
+mvn compile
 ```
 
-## Run Bot Games
+## Run Tests
 
 ```bash
-scripts/run.sh --bots 3 --games 5 --quiet
+mvn test
 ```
 
-## Run Interactive Game
+## Run Application
 
 ```bash
-scripts/run.sh --human --bots 2 --games 1
+mvn exec:java
 ```
 
-Card input examples:
+## Example Runs
+
+Run five quiet bot games:
+
+```bash
+mvn exec:java -Dexec.args="--bots 3 --games 5 --quiet"
+```
+
+Run an interactive game:
+
+```bash
+mvn exec:java -Dexec.args="--human --bots 2 --games 1"
+```
+
+## Create Package
+
+```bash
+mvn package
+```
+
+## Run Packaged Jar
+
+```bash
+java -jar target/uno-cli-1.0.jar --bots 3 --games 5 --quiet
+```
+
+The packaged jar includes its runtime dependencies and has a `Main-Class` manifest entry.
+
+## Docker Build
+
+```bash
+docker build -t uno-cli .
+```
+
+## Docker Run
+
+```bash
+docker run -it uno-cli
+```
+
+## Card Input Examples
 
 ```text
 R5   red 5
@@ -34,38 +99,37 @@ W4   wild draw four
 draw draw a card
 ```
 
-## Characterization Checks
+## Logging
 
-```bash
-scripts/test.sh
-```
+The application logs important events including:
+
+* game start
+* player turns
+* cards played
+* cards drawn
+* invalid input
+* game completion
+
+Logging supplements normal CLI output and does not replace player-facing messages.
+
+## Documentation
+
+Additional documentation is available in the `docs` directory:
+
+* `docs/rules.html` - implemented game rules
+* `docs/midterm-exam.md` - original midterm brief
+* `docs/rubric.md` - grading rubric
+* `docs/refactoring-guide.md` - suggested refactoring path
+* `docs/refactoring-report.md` - performed refactorings and preserved behaviors
+* `docs/extension-readiness.md` - future extension opportunities
 
 ## Submission
 
-Submit your work through GitHub:
+Assignment 4 deliverables include:
 
-1. Fork this repository to your GitHub account.
-2. Clone your fork locally.
-3. Complete the midterm work in your fork.
-4. Commit your changes with clear commit messages.
-5. Push your branch to GitHub.
-6. Open a pull request from your fork back to the original repository.
-
-Your pull request must include:
-
-* refactored source code
-* characterization tests
-* `docs/refactoring-report.md`
-* `docs/extension-readiness.md`
-
-Do not submit a zip file instead of a pull request unless the instructor explicitly asks for it.
-
-## Rules
-
-See `docs/rules.html` for the implemented game rules.
-
-## Midterm Materials
-
-* `docs/midterm-exam.md`: midterm brief
-* `docs/rubric.md`: grading rubric
-* `docs/refactoring-guide.md`: suggested refactoring path
+* Maven build configuration (`pom.xml`)
+* JUnit test integration (`mvn test`)
+* logging implementation
+* `Dockerfile`
+* updated `README.md`
+* refactored source code and documentation

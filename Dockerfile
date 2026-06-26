@@ -6,4 +6,4 @@ COPY . .
 
 RUN mvn package
 
-CMD ["mvn", "exec:java"]
+CMD ["java", "-jar", "target/uno-cli-1.0.jar"]
