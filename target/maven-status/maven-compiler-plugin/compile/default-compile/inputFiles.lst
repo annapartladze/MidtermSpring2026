@@ -7,4 +7,9 @@
 /Users/annapartladze/MidtermSpring2026/src/main/java/RuleEngine.java
 /Users/annapartladze/MidtermSpring2026/src/main/java/persistence/DatabaseManager.java
 /Users/annapartladze/MidtermSpring2026/src/main/java/persistence/GamePersistenceService.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/MyBatisUtil.java
 /Users/annapartladze/MidtermSpring2026/src/main/java/persistence/StatisticsService.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/entity/Game.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/mapper/GameMapper.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/report/HighestScore.java
+/Users/annapartladze/MidtermSpring2026/src/main/java/persistence/report/RecentGame.java

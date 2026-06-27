@@ -12,10 +12,12 @@ public class GameState {
     ArrayList<String> deck = new ArrayList<String>();
     ArrayList<String> discard = new ArrayList<String>();
     int[] scores = new int[10];
+    boolean[] unoCalled = new boolean[10];
     int currentPlayer = 0;
     int direction = 1;
     String upCard = "";
     String calledColor = "";
+    int targetScore = 500;
 
     int roundsPlayed = 0;
     String winner = "";
@@ -31,6 +33,9 @@ public class GameState {
         playerNames.clear();
         humanPlayers.clear();
         hands.clear();
+        for (int i = 0; i < unoCalled.length; i++) {
+            unoCalled[i] = false;
+        }
         if (human) {
             playerNames.add("You");
             humanPlayers.add(Boolean.TRUE);

@@ -9,6 +9,7 @@ The application supports:
 * bot-only games
 * human vs. bot games
 * configurable numbers of bots and games
+* target-score match play
 * scoring across multiple games
 * automated tests through Maven
 * logging of important game events
@@ -59,6 +60,18 @@ Run an interactive game:
 
 ```bash
 mvn exec:java -Dexec.args="--human --bots 2 --games 1"
+```
+
+Run rounds until a player reaches 500 points:
+
+```bash
+mvn exec:java -Dexec.args="--bots 3 --target 500"
+```
+
+Run database reports without playing a new game:
+
+```bash
+mvn exec:java -Dexec.args="--report all --player Bot1"
 ```
 
 ## Create Package
@@ -122,6 +135,8 @@ Additional documentation is available in the `docs` directory:
 * `docs/refactoring-guide.md` - suggested refactoring path
 * `docs/refactoring-report.md` - performed refactorings and preserved behaviors
 * `docs/extension-readiness.md` - future extension opportunities
+* `docs/rules-supported.md` - final-project UNO rules and variants
+* `docs/final-report.md` - final-project implementation report
 
 ## Submission
 

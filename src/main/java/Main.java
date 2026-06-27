@@ -22,6 +22,7 @@ public class Main {
         long seed = System.currentTimeMillis();
         String report = null;
         String reportPlayer = "Bot1";
+        int targetScore = 0;
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("--bots") && i + 1 < args.length) {
@@ -38,9 +39,11 @@ public class Main {
                 report = args[++i];
             } else if (args[i].equals("--player") && i + 1 < args.length) {
                 reportPlayer = args[++i];
+            } else if (args[i].equals("--target") && i + 1 < args.length) {
+                targetScore = Integer.parseInt(args[++i]);
             } else if (args[i].equals("--help")) {
                 System.out.println(
-                        "Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N] [--report recent|wins|scores|all] [--player NAME]");
+                        "Usage: scripts/run.sh [--bots N] [--games N] [--human] [--quiet] [--seed N] [--target N] [--report recent|wins|scores|all] [--player NAME]");
                 return;
             }
         }
@@ -75,6 +78,9 @@ public class Main {
         GameState state = new GameState();
         state.quiet = quietFlag;
         state.random = new Random(seed);
+        if (targetScore > 0) {
+            state.targetScore = targetScore;
+        }
         state.setupPlayers(bots, human);
 
         if (state.playerNames.size() < 2 ||
@@ -85,7 +91,9 @@ public class Main {
 
         GameEngine engine = new GameEngine(state);
 
-        for (int g = 1; g <= games; g++) {
+        int maxRounds = targetScore > 0 ? 1000 : games;
+
+        for (int g = 1; g <= maxRounds; g++) {
 
             if (!state.quiet) {
                 System.out.println("\n=== Game " + g + " ===");
@@ -107,6 +115,18 @@ public class Main {
                 );
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+
+            if (targetScore > 0 && engine.hasReachedTarget()) {
+                int winnerIndex = engine.targetWinnerIndex();
+                if (!state.quiet) {
+                    System.out.println(
+                            state.playerNames.get(winnerIndex)
+                                    + " wins the match at "
+                                    + state.scores[winnerIndex]
+                                    + " points.");
+                }
+                break;
             }
         }
 

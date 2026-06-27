@@ -16,6 +16,12 @@ public class RuleEngine {
             return CardUtils.color(card).equals(call);
         }
 
+        // If up card is a wild but no color has been called yet,
+        // nothing non-wild is legal
+        if (up.startsWith("W")) {
+            return false;
+        }
+
         // Match by color
         if (CardUtils.color(card).equals(CardUtils.color(up))) {
             return true;
@@ -23,7 +29,7 @@ public class RuleEngine {
 
         // Match by action type
         String cardRank = CardUtils.rank(card);
-        String upRank = CardUtils.rank(up);
+        String upRank   = CardUtils.rank(up);
 
         if (cardRank.equals(upRank) && !cardRank.equals("NUMBER")) {
             return true;

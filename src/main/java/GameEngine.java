@@ -16,50 +16,64 @@ public class GameEngine {
         this.state = state;
     }
 
+    ArrayList<String> buildDeck() {
+        ArrayList<String> cards = new ArrayList<String>();
+        String[] colors = {"R", "Y", "G", "B"};
+        for (int c = 0; c < colors.length; c++) {
+            cards.add(colors[c] + "0");
+            for (int n = 1; n <= 9; n++) {
+                cards.add(colors[c] + n);
+                cards.add(colors[c] + n);
+            }
+            cards.add(colors[c] + "S");
+            cards.add(colors[c] + "S");
+            cards.add(colors[c] + "R");
+            cards.add(colors[c] + "R");
+            cards.add(colors[c] + "+2");
+            cards.add(colors[c] + "+2");
+        }
+        for (int i = 0; i < 4; i++) {
+            cards.add("W");
+            cards.add("W4");
+        }
+        return cards;
+    }
+
     void playGame() {
-        state.startedAt = LocalDateTime.now();
+        state.startedAt  = LocalDateTime.now();
         state.finishedAt = null;
         state.roundsPlayed = 0;
         state.winner = "";
         logger.info("UNO game started");
 
         state.deck.clear();
-        String[] colors = {"R", "Y", "G", "B"};
-        for (int c = 0; c < colors.length; c++) {
-            state.deck.add(colors[c] + "0");
-            for (int n = 1; n <= 9; n++) {
-                state.deck.add(colors[c] + n);
-                state.deck.add(colors[c] + n);
-            }
-            state.deck.add(colors[c] + "S");
-            state.deck.add(colors[c] + "S");
-            state.deck.add(colors[c] + "R");
-            state.deck.add(colors[c] + "R");
-            state.deck.add(colors[c] + "+2");
-            state.deck.add(colors[c] + "+2");
-        }
-        for (int i = 0; i < 4; i++) {
-            state.deck.add("W");
-            state.deck.add("W4");
-        }
+        state.deck.addAll(buildDeck());
 
         Collections.shuffle(state.deck, state.random);
         state.discard.clear();
+
         for (int i = 0; i < state.hands.size(); i++) {
             state.hands.get(i).clear();
         }
+
+        // FIX: reset unoCalled flags at the start of every round
+        for (int i = 0; i < state.unoCalled.length; i++) {
+            state.unoCalled[i] = false;
+        }
+
         for (int i = 0; i < state.playerNames.size(); i++) {
             for (int j = 0; j < 7; j++) {
                 state.hands.get(i).add(state.draw());
             }
         }
+
         state.upCard = state.draw();
         while (state.upCard.startsWith("W")) {
             state.discard.add(state.upCard);
             state.upCard = state.draw();
         }
-        state.calledColor = "";
-        state.direction = 1;
+        state.calledColor   = "";
+        state.direction     = 1;
         state.currentPlayer = state.random.nextInt(state.playerNames.size());
 
         int guard = 0;
@@ -73,7 +87,8 @@ public class GameEngine {
             ArrayList<String> hand = state.hands.get(state.currentPlayer);
 
             if (!state.quiet) {
-                System.out.println("\nUp card: " + state.upCard + (state.calledColor.equals("") ? "" : " called " + state.calledColor));
+                System.out.println("\nUp card: " + state.upCard
+                        + (state.calledColor.equals("") ? "" : " called " + state.calledColor));
                 System.out.println(name + " hand: " + state.join(hand));
             }
 
@@ -85,7 +100,6 @@ public class GameEngine {
 
             if (chosen >= 0) {
                 if (chosen >= hand.size()) {
-
                     logger.warn("{} selected an invalid index", name);
                     if (!state.quiet) {
                         System.out.println(name + " selected an invalid index and draws a penalty card.");
@@ -128,11 +142,17 @@ public class GameEngine {
                     }
                 }
 
-                if (hand.size() == 1 && !state.quiet) {
-                    System.out.println(name + " says UNO!");
+                // reset UNO flag if hand is no longer at 1
+                if (hand.size() != 1) {
+                    state.unoCalled[state.currentPlayer] = false;
                 }
+
+                if (hand.size() == 1) {
+                    handleUnoCall(state.currentPlayer);
+                }
+
                 if (hand.size() == 0) {
-                    state.winner = name;
+                    state.winner     = name;
                     state.finishedAt = LocalDateTime.now();
 
                     int points = calculateWinnerScore();
@@ -141,19 +161,17 @@ public class GameEngine {
                     if (!state.quiet) {
                         System.out.println(name + " wins and scores " + points);
                     }
-
-                    logger.info("{} won the game with {} points",
-                            name,
-                            points);
+                    logger.info("{} won the game with {} points", name, points);
                     return;
-                }
-
-                 else {
+                } else {
                     applyCardEffect(card);
                 }
-            } else {
+
+            } else if (chosen == -1) {
+                // no draw happened, just pass
                 state.next();
             }
+            // chosen == -2 means handleDraw already called state.next()
         }
         if (!state.quiet) {
             System.out.println("Game stopped at safety limit.");
@@ -189,7 +207,51 @@ public class GameEngine {
                 }
             }
         }
-        return -1;
+        state.next();
+        return -2; // turn already advanced inside here
+    }
+
+    void handleUnoCall(int playerIndex) {
+        String name = state.playerNames.get(playerIndex);
+
+        if (!state.humanPlayers.get(playerIndex).booleanValue()) {
+            markUnoCall(playerIndex);
+            if (!state.quiet) {
+                System.out.println(name + " says UNO!");
+            }
+            return;
+        }
+
+        System.out.print("Call UNO? y/n: ");
+        if (state.scanner.hasNextLine()) {
+            String answer = state.scanner.nextLine();
+            if (answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes")) {
+                markUnoCall(playerIndex);
+                if (!state.quiet) {
+                    System.out.println(name + " says UNO!");
+                }
+                return;
+            }
+        }
+
+        applyMissedUnoPenalty(playerIndex);
+    }
+
+    void markUnoCall(int playerIndex) {
+        state.unoCalled[playerIndex] = true;
+    }
+
+    void applyMissedUnoPenalty(int playerIndex) {
+        ArrayList<String> hand = state.hands.get(playerIndex);
+        if (hand.size() == 1 && !state.unoCalled[playerIndex]) {
+            hand.add(state.draw());
+            hand.add(state.draw());
+            if (!state.quiet) {
+                System.out.println(
+                        state.playerNames.get(playerIndex)
+                                + " missed UNO and draws two.");
+            }
+        }
     }
 
     int calculateWinnerScore() {
@@ -213,6 +275,7 @@ public class GameEngine {
         } else if (rank.equals("REVERSE")) {
             state.direction = state.direction * -1;
             if (state.playerNames.size() == 2) {
+                // two-player: Reverse acts like Skip
                 state.next();
                 state.next();
             } else {
@@ -238,5 +301,18 @@ public class GameEngine {
         } else {
             state.next();
         }
+    }
+
+    boolean hasReachedTarget() {
+        return targetWinnerIndex() >= 0;
+    }
+
+    int targetWinnerIndex() {
+        for (int i = 0; i < state.playerNames.size(); i++) {
+            if (state.scores[i] >= state.targetScore) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
